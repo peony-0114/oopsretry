@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 # 데이터 불러오기
 data = pd.read_csv("combined_deforestation_species.csv")
 
-# 제목
-st.title("🌱 Global Deforestation & Threatened Species Trends")
-st.write("연도별 산림 파괴율과 멸종위기종 증가율 비교")
+st.title("🌱 Deforestation & Threatened Species Trends")
+st.write("연도별 산림 파괴율(%)과 멸종위기종 개체 수를 함께 시각화합니다.")
 
 # 연도 슬라이더
 years = data['Year']
@@ -21,24 +20,48 @@ start_year, end_year = st.slider(
 # 선택한 범위로 데이터 필터링
 filtered = data[(data['Year'] >= start_year) & (data['Year'] <= end_year)]
 
-# 그래프 그리기
-fig, ax1 = plt.subplots(figsize=(10, 6))
+# 그래프 (Plotly)
+fig = go.Figure()
 
-# 산림 파괴율 (좌측 Y축)
-ax1.plot(filtered['Year'], filtered['Forest Loss (%)'], color='green', label='Forest Loss Rate (%)')
-ax1.set_xlabel('Year')
-ax1.set_ylabel('Forest Loss Rate (%)', color='green')
-ax1.tick_params(axis='y', labelcolor='green')
+# ✅ Forest Loss (%) - 꺾은선그래프 (좌측 Y축)
+fig.add_trace(go.Scatter(
+    x=filtered['Year'],
+    y=filtered['Forest Loss (%)'],
+    name='Forest Loss Rate (%)',
+    yaxis='y1',
+    mode='lines+markers',
+    line=dict(color='green', width=3)
+))
 
-# 멸종위기종 증가율 (우측 Y축)
-ax2 = ax1.twinx()
-ax2.plot(filtered['Year'], filtered['Threatened Growth (%)'], color='red', label='Threatened Species Growth Rate (%)')
-ax2.set_ylabel('Threatened Species Growth Rate (%)', color='red')
-ax2.tick_params(axis='y', labelcolor='red')
+# ✅ Threatened Species - 막대그래프 (우측 Y축)
+fig.add_trace(go.Bar(
+    x=filtered['Year'],
+    y=filtered['Threatened Species'],
+    name='Threatened Species Count',
+    yaxis='y2',
+    marker=dict(color='rgba(255, 0, 0, 0.5)')
+))
 
-fig.suptitle('Deforestation vs Threatened Species Growth', fontsize=16)
-ax1.legend(loc='upper left')
-ax2.legend(loc='upper right')
+# 레이아웃 설정
+fig.update_layout(
+    title="Deforestation (Line) vs Threatened Species (Bar)",
+    xaxis=dict(title='Year'),
+    yaxis=dict(
+        title='Forest Loss Rate (%)',
+        titlefont=dict(color='green'),
+        tickfont=dict(color='green')
+    ),
+    yaxis2=dict(
+        title='Threatened Species Count',
+        titlefont=dict(color='red'),
+        tickfont=dict(color='red'),
+        overlaying='y',
+        side='right'
+    ),
+    legend=dict(x=0.01, y=0.99),
+    bargap=0.3,
+    template="plotly_white"
+)
 
-st.pyplot(fig)
-
+# Streamlit에 그래프 표시
+st.plotly_chart(fig)
